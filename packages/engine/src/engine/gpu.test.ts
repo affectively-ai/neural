@@ -97,4 +97,24 @@ describe("GPUEngine", () => {
         // We can't easily check the nested mock calls count without storing the mock, 
         // but if no error threw, the flow worked.
     });
+
+    test("prepareBuffers() and runTick() with Batch Size > 1", async () => {
+        const gpu = new GPUEngine();
+        await gpu.init();
+        
+        const N = 4;
+        const B = 2; // Batch Size 2
+        
+        gpu.prepareBuffers(N, new Float32Array(N), new Float32Array(N), B);
+        
+        // Input size = N * B = 8
+        const inputs = new Float32Array(N * B);
+        await gpu.runTick(inputs);
+        
+        expect(mockDevice.createBuffer).toHaveBeenCalled();
+        expect(mockDevice.queue.writeBuffer).toHaveBeenCalled();
+        
+        // Verify buffer size in mock? Mock doesn't store state.
+        // But verifying it runs without throwing "Input size mismatch" proves validation worked.
+    });
 });

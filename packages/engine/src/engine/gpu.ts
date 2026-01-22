@@ -1,10 +1,21 @@
 import shaderCode from './shaders/brain.wgsl?raw';
+import trainingShaderCode from './shaders/training.wgsl?raw';
+// import trainingShaderCode from './shaders/training.wgsl?raw'; // Handled in replace block above, this is safety check
 
 export class GPUEngine {
     device: GPUDevice | null = null;
     pipeline: GPUComputePipeline | null = null;
     bindGroup: GPUBindGroup | null = null;
 
+    // Training Buffers
+    deltaBuffer: GPUBuffer | null = null;
+    targetBuffer: GPUBuffer | null = null;
+    paramBuffer: GPUBuffer | null = null;
+
+    trainingPipeline: GPUComputePipeline | null = null;
+    deltaPipeline: GPUComputePipeline | null = null;
+    trainingBindGroup: GPUBindGroup | null = null;
+    
     // Buffers
     weightBuffer: GPUBuffer | null = null;
     inputBuffer: GPUBuffer | null = null;
@@ -13,6 +24,7 @@ export class GPUEngine {
     uniformBuffer: GPUBuffer | null = null;
 
     networkSize: number = 0;
+    batchSize: number = 1;
 
     async init() {
         if (!navigator.gpu) throw new Error("WebGPU not supported");
@@ -20,34 +32,45 @@ export class GPUEngine {
         if (!adapter) throw new Error("No GPU adapter found");
         this.device = await adapter.requestDevice();
 
-        const shaderModule = this.device.createShaderModule({
-            code: shaderCode
-        });
+        const shaderModule = this.device.createShaderModule({ code: shaderCode });
+        const trainingModule = this.device.createShaderModule({ code: trainingShaderCode });
 
         this.pipeline = this.device.createComputePipeline({
             layout: 'auto',
-            compute: {
-                module: shaderModule,
-                entryPoint: 'main'
-            }
+            compute: { module: shaderModule, entryPoint: 'main' }
+        });
+
+        this.trainingPipeline = this.device.createComputePipeline({
+            layout: 'auto',
+            compute: { module: trainingModule, entryPoint: 'update_weights' }
+        });
+
+        this.deltaPipeline = this.device.createComputePipeline({
+            layout: 'auto',
+            compute: { module: trainingModule, entryPoint: 'calculate_deltas' }
         });
         
         console.log("GPUEngine initialized");
     }
 
-    // Prepare buffers based on network size (N)
-    prepareBuffers(size: number, weights: Float32Array, biases: Float32Array) {
+    // Prepare buffers based on network size (N) and Batch Size (B)
+    prepareBuffers(size: number, weights: Float32Array, biases: Float32Array, batchSize: number = 1) {
         if (!this.device || !this.pipeline) throw new Error("GPUEngine not initialized");
         this.networkSize = size;
+        this.batchSize = batchSize;
 
         // Create Buffers
+        // Weights & Biases are shared (Size N or N*N)
         this.weightBuffer = this.createBuffer(weights, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
-        this.inputBuffer = this.createBuffer(new Float32Array(size), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
         this.biasBuffer = this.createBuffer(biases, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
-        this.outputBuffer = this.createBuffer(new Float32Array(size), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST);
         
-        // Dimensions Uniform
-        const dimArray = new Uint32Array([size]);
+        // Inputs & Outputs are Batched (Size N * B)
+        const batchedSize = size * batchSize;
+        this.inputBuffer = this.createBuffer(new Float32Array(batchedSize), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+        this.outputBuffer = this.createBuffer(new Float32Array(batchedSize), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST);
+        
+        // Dimensions Uniform: [Size, BatchSize]
+        const dimArray = new Uint32Array([size, batchSize]);
         this.uniformBuffer = this.createBuffer(dimArray, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
 
         // Bind Group
@@ -83,6 +106,10 @@ export class GPUEngine {
         if (!this.device || !this.pipeline || !this.bindGroup || !this.inputBuffer || !this.outputBuffer) {
             throw new Error("GPU buffers not ready");
         }
+        
+        if (inputs.length !== this.networkSize * this.batchSize) {
+           throw new Error(`Input size mismatch. Expected ${this.networkSize * this.batchSize}, got ${inputs.length}`);
+        }
 
         // Upload Input
         this.device.queue.writeBuffer(this.inputBuffer, 0, inputs);
@@ -93,17 +120,13 @@ export class GPUEngine {
         passEncoder.setPipeline(this.pipeline);
         passEncoder.setBindGroup(0, this.bindGroup);
         
-        // Dispatch (Size / WorkgroupSize)
+        // Dispatch (Size / WorkgroupSize, 1, BatchSize)
         const workgroupSize = 64;
         const workgroupCount = Math.ceil(this.networkSize / workgroupSize);
-        passEncoder.dispatchWorkgroups(workgroupCount);
+        passEncoder.dispatchWorkgroups(workgroupCount, 1, this.batchSize);
         passEncoder.end();
 
         // Read Output
-        // We need to copy output buffer to a staging buffer to read it
-        // Or simplified: Just read from output if we create a staging buffer. 
-        // For performance, we usually keep it on GPU, but for this demo step we read back.
-        
         const size = inputs.byteLength;
         const gpuReadBuffer = this.device.createBuffer({
             size: size,
@@ -121,5 +144,124 @@ export class GPUEngine {
         gpuReadBuffer.unmap();
         
         return output;
+    }
+
+    prepareTrainingBuffers(targets: Float32Array, learningRate: number) {
+        if (!this.device || !this.trainingPipeline || !this.weightBuffer || !this.outputBuffer || !this.biasBuffer || !this.uniformBuffer) {
+            throw new Error("GPU not ready for training");
+        }
+        
+        if (targets.length !== this.networkSize * this.batchSize) {
+            throw new Error(`Target size mismatch. Expected ${this.networkSize * this.batchSize}, got ${targets.length}`);
+        }
+
+        // Deltas & Targets are Batched (Size N * B)
+        const batchedSize = this.networkSize * this.batchSize;
+        this.deltaBuffer = this.createBuffer(new Float32Array(batchedSize), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC);
+        this.targetBuffer = this.createBuffer(targets, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+        this.paramBuffer = this.createBuffer(new Float32Array([learningRate]), GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
+
+        this.trainingBindGroup = this.device.createBindGroup({
+            layout: this.trainingPipeline.getBindGroupLayout(0),
+            entries: [
+                { binding: 0, resource: { buffer: this.weightBuffer } },
+                { binding: 1, resource: { buffer: this.outputBuffer } }, 
+                { binding: 2, resource: { buffer: this.biasBuffer } },
+                { binding: 3, resource: { buffer: this.deltaBuffer } },
+                { binding: 4, resource: { buffer: this.targetBuffer } },
+                { binding: 5, resource: { buffer: this.uniformBuffer } },
+                { binding: 6, resource: { buffer: this.paramBuffer } }
+            ]
+        });
+    }
+
+    private subscribers: ((event: { type: 'loss' | 'epoch', value: number }) => void)[] = [];
+
+    subscribe(callback: (event: { type: 'loss' | 'epoch', value: number }) => void) {
+        this.subscribers.push(callback);
+        return () => {
+            this.subscribers = this.subscribers.filter(s => s !== callback);
+        };
+    }
+
+    private emit(event: { type: 'loss' | 'epoch', value: number }) {
+        this.subscribers.forEach(cb => cb(event));
+    }
+
+    async train(inputs: Float32Array, targets: Float32Array): Promise<Float32Array> {
+        // 1. Forward Pass
+        const outputs = await this.runTick(inputs);
+        
+        // 2. Calculate Loss (MSE) on CPU for UI Feedback
+        // Only feasible if batch size is small or we sample. 
+        // For demo, we just calc full MSE.
+        let totalLoss = 0;
+        for (let i = 0; i < outputs.length; i++) {
+             // Only if target is valid? Assuming targets cover all neurons logic as per shader
+             const t = targets[i];
+             if (t > -998) {
+                 const diff = outputs[i] - t;
+                 totalLoss += 0.5 * diff * diff;
+             }
+        }
+        const meanLoss = totalLoss / this.batchSize; // Approx
+        this.emit({ type: 'loss', value: meanLoss });
+
+        // 3. Backward Pass
+        // Ensure buffers (deltas, targets) are ready?
+        // Reuse prepareTrainingBuffers or assume already called?
+        // Let's assume prepareTrainingBuffers was called ONCE before loop.
+        // We just need to update TARGETS buffer!
+        if (this.targetBuffer) {
+           this.device?.queue.writeBuffer(this.targetBuffer, 0, targets);
+        }
+        
+        // Run Training Shaders
+        await this.trainTick();
+
+        this.emit({ type: 'epoch', value: 1 }); // Just tick count really
+        return outputs;
+    }
+
+    async trainTick(deltas?: Float32Array): Promise<void> {
+        if (!this.device || !this.trainingPipeline || !this.deltaPipeline || !this.trainingBindGroup || !this.deltaBuffer) {
+            throw new Error("Training not ready");
+        }
+
+        if (deltas && deltas.length > 0) {
+           this.device.queue.writeBuffer(this.deltaBuffer, 0, deltas);
+        }
+
+        const commandEncoder = this.device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginComputePass();
+        
+        // Pass 1: Calculate Deltas (Batched)
+        passEncoder.setPipeline(this.deltaPipeline);
+        passEncoder.setBindGroup(0, this.trainingBindGroup);
+        const workgroupSize = 64;
+        const workgroupCount = Math.ceil(this.networkSize / workgroupSize);
+        passEncoder.dispatchWorkgroups(workgroupCount, 1, this.batchSize);
+
+        passEncoder.end();
+        
+        const updatePass = commandEncoder.beginComputePass();
+        updatePass.setPipeline(this.trainingPipeline);
+        updatePass.setBindGroup(0, this.trainingBindGroup); // Re-bind for new pass
+        updatePass.dispatchWorkgroups(workgroupCount, 1, 1); // Not batched
+        updatePass.end();
+
+        this.device.queue.submit([commandEncoder.finish()]);
+        this.device.queue.submit([commandEncoder.finish()]);
+    }
+
+    async injectInput(data: Float32Array): Promise<void> {
+        if (!this.device || !this.inputBuffer) return;
+        
+        // We only write what we are given, usually just the first N inputs (Microphone bins)
+        // If data is smaller than buffer, we use queue.writeBuffer which handles partial writes
+        this.device.queue.writeBuffer(this.inputBuffer, 0, data);
+        
+        // Trigger a tick? Or let the outer loop do it?
+        // Let's just update the buffer. The UI loop calls runTick() or similar.
     }
 }

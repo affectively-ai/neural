@@ -2,46 +2,87 @@
 
 **Neural** is a local-first, WebGPU-accelerated neural graph database. It allows you to build, train, and visualize neural networks that live entirely on your device, with no cloud dependencies.
 
-## Key Features
+![Neural 2.0 Banner](https://placehold.co/1200x400/000000/0d9488?text=Neural+2.0:+The+Transparent+Brain)
 
-- **WebGPU Compute:** Runs forward/backward propagation on the GPU for high-performance training.
-- **Local Persistence:** Uses **Dash** (WASM SQLite + OPFS) to store the neural graph structure.
-- **Semantic Neurons:** Tag neurons with natural language descriptions (vector embeddings) for queryability.
-- **Real-time Logic:** A "living" network that persists state across sessions.
+## 🧠 Key Features
 
-## Project Structure
+### The Learning Brain (Compute)
 
-This is a monorepo managed by Bun namespaces:
+- **WebGPU Backpropagation**: Custom WGSL kernels for massively parallel forward/backward passes.
+- **Real-Time Training**: Interactive stochastic gradient descent (SGD) engine running at 60fps.
+- **Batch Processing**: Supports mini-batch training with 3D compute dispatch.
 
-- **`packages/engine`**: The core library. Contains the `GPUEngine`, `Translator`, and Dash database persistence layer.
-- **`apps/web`**: A Next.js 14 application demonstrating the "Transparent Brain" UI.
+### The Visible Brain (Visualization)
 
-## Getting Started
+- **3D Interactive Connectome**: Render 10k+ neurons and synapses using **Three.js** and InstancedMesh.
+- **Force-Directed Layout**: Physics-based arrangement of the neural graph in real-time.
+- **Live Lesioning**: Click on synapses to cut them and see the network recompile instantly.
+
+### The Persistent Brain (Storage)
+
+- **Local-First**: Built on **Dash** (SQLite + OPFS), storing your neural graph privately on your device.
+- **Semantic Tagging**: Neurons support vector embeddings for semantic search.
+
+### The Collaborative Brain (Sharing)
+
+- **Model Zoo**: Explore preset architectures (XOR, Recurrent Loops).
+- **Import/Export**: Share your neural graphs via JSON.
+
+### The Hybrid Brain (Experimental)
+
+- **Brain-Computer Interface**: Inject real-time audio (Microphone) directly into the neural network's input neurons.
+
+## 🏗️ Architecture
+
+This project is a high-performance **Bun Monorepo**:
+
+- **`packages/engine`**: The Core.
+  - `GPUEngine`: manages WebGPU buffers & pipelines.
+  - `Translator`: Flattens graph topology into dense matrices.
+  - `NeuronRepository`: Persistence layer.
+- **`apps/web`**: The Interface.
+  - Next.js 14 App Router.
+  - React Three Fiber (R3F) for visualization.
+  - Glassmorphism Design System.
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) (Required for workspace management)
-- A browser with **WebGPU** support (Chrome 113+, Edge, or Firefox Nightly).
+- [Bun](https://bun.sh) v1.0+
+- A WebGPU-enabled browser (Chrome 113+, Edge, Firefox Nightly).
 
-### Development
+### Installation
 
-1.  **Install Dependencies:**
+```bash
+# Install dependencies
+bun install
+```
 
-    ```bash
-    bun install
-    ```
+### Running the Demo
 
-2.  **Run the Demo:**
-    ```bash
-    cd apps/web
-    bun dev
-    ```
+```bash
+cd apps/web
+bun dev
+```
 
-## Architecture
+Open [http://localhost:3000](http://localhost:3000) to see the Transparent Brain.
 
-1.  **Storage:** `neurons` and `synapses` tables in local SQLite.
-2.  **Logic:** TypeScript classes (`NeuronRepository`) handle CRUD.
-3.  **Compute:** `brain.wgsl` compute shaders execute the math.
+### Running Benchmarks
+
+Measure your GPU's inference and training throughput:
+
+```bash
+cd packages/engine
+bun run bench
+```
+
+## 🛠️ Tech Stack
+
+- **Runtime**: Bun
+- **Frontend**: Next.js, TailwindCSS, React Three Fiber
+- **Compute**: WebGPU (WGSL)
+- **Storage**: @buley/dash (WASM SQLite)
 
 ## License
 

@@ -23,9 +23,10 @@ fn tanh_approx(x: f32) -> f32 {
     return (e2x - 1.0) / (e2x + 1.0);
 }
 
-@compute @workgroup_size(64)
+@compute @workgroup_size(64, 1, 1)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let row = global_id.x;
+    let batch = global_id.z;
     let size = dims.size;
 
     if (row >= size) {
@@ -34,18 +35,25 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     // Dot product: Row of W * Vector X
     var sum: f32 = 0.0;
+    
+    // Batch offset for input/output
+    let batch_offset = batch * size;
+
     for (var col: u32 = 0u; col < size; col = col + 1u) {
-        // W is flattened, so W[row][col] is weights[row * size + col]
-        // Actually, for W * x, if W_ij is weight FROM j TO i.
-        // Let's assume W is stored such that weights[i * size + j] is weight FROM j to i.
-        
+        // W is shared (not batched): weights[row * size + col]
         let w_idx = row * size + col;
-        sum = sum + (weights[w_idx] * input[col]);
+        
+        // Input is batched: input[batch * size + col]
+        let input_idx = batch_offset + col;
+        
+        sum = sum + (weights[w_idx] * input[input_idx]);
     }
 
-    // Add Bias
+    // Add Bias (Shared)
     sum = sum + biases[row];
 
-    // Activation (Hardcoded to Tanh for now, could become a property)
-    output[row] = tanh_approx(sum);
+    // Activation
+    // Output is batched: output[batch * size + row]
+    let out_idx = batch_offset + row;
+    output[out_idx] = tanh_approx(sum);
 }

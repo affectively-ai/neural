@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    transpilePackages: ['@neural/engine', '@buley/dash'],
     async headers() {
         return [
             {
@@ -20,6 +21,13 @@ const nextConfig = {
     webpack: (config) => {
         // Enable async WebAssembly
         config.experiments = { ...config.experiments, asyncWebAssembly: true, layers: true };
+        
+        // Handle WGSL files
+        config.module.rules.push({
+            test: /\.wgsl$/,
+            type: 'asset/source',
+        });
+        
         return config;
     },
 };

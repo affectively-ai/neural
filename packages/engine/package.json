@@ -1,15 +1,16 @@
 {
   "name": "@neural/engine",
   "version": "2.0.0",
-  "description": "The Transparent Brain: A Local-First, WebGPU-Accelerated Neural Graph Database.",
+  "description": "A Transparent, Local-First, WebGPU-Accelerated Neural Graph Database.",
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build"
+    "build": "tsc && vite build",
+    "bench": "bun src/bench/benchmark.ts"
   },
   "dependencies": {
-    "@buley/dash": "file:../../../dash"
+    "@buley/dash": "latest"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69",
