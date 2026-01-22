@@ -1,0 +1,8 @@
+{
+  "name": "neural-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

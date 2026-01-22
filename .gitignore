@@ -1,1 +1,10 @@
-*.swp
+
+node_modules
+dist
+.next
+.turbo
+.DS_Store
+.env
+.env.local
+coverage
+test-results
