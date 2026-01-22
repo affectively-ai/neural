@@ -4,7 +4,7 @@
 
 ![Neural 2.0 Banner](https://placehold.co/1200x400/000000/0d9488?text=Neural+2.0:+The+Transparent+Brain)
 
-## 🧠 Key Features
+## Key Features
 
 ### The Learning Brain (Compute)
 
@@ -32,7 +32,7 @@
 
 - **Brain-Computer Interface**: Inject real-time audio (Microphone) directly into the neural network's input neurons.
 
-## 🏗️ Architecture
+## Architecture
 
 This project is a high-performance **Bun Monorepo**:
 
@@ -41,11 +41,11 @@ This project is a high-performance **Bun Monorepo**:
   - `Translator`: Flattens graph topology into dense matrices.
   - `NeuronRepository`: Persistence layer.
 - **`apps/web`**: The Interface.
-  - Next.js 14 App Router.
+  - Next.js 16 App Router.
   - React Three Fiber (R3F) for visualization.
   - Glassmorphism Design System.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -77,7 +77,7 @@ cd packages/engine
 bun run bench
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Runtime**: Bun
 - **Frontend**: Next.js, TailwindCSS, React Three Fiber
