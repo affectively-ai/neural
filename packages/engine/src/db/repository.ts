@@ -1,18 +1,5 @@
 import { dash } from "@buley/dash";
-
-export interface Neuron {
-    id: string;
-    type: 'input' | 'hidden' | 'output';
-    bias: number;
-    activation: string;
-}
-
-export interface Synapse {
-    id: string;
-    from_id: string;
-    to_id: string;
-    weight: number;
-}
+import { Neuron, Synapse } from "../types";
 
 export class NeuronRepository {
     async create(neuron: Neuron): Promise<void> {

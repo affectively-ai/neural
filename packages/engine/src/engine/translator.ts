@@ -1,4 +1,4 @@
-import { Neuron, Synapse } from "../db/repository";
+import { Neuron, Synapse } from "../types";
 
 export class Translator {
     // Maps Neuron logical IDs (UUIDs) to Matrix Indices (0...N)
