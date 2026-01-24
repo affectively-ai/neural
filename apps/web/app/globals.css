@@ -6,8 +6,8 @@
 
   /* Primary Accent: Dark Teal */
   --accent-color: #0d9488;
-  --color-brand-primary: #0d9488; 
-  --color-brand-primary-light: #2dd4bf; 
+  --color-brand-primary: #0d9488;
+  --color-brand-primary-light: #2dd4bf;
   --color-brand-primary-dark: #0f766e;
 
   /* Secondary Accent: Soft Coral */
@@ -15,29 +15,29 @@
   --color-brand-secondary: #fb7185;
   --color-brand-secondary-light: #fda4af;
 
-  --font-mono: 'Courier New', monospace;
+  --font-mono: "Courier New", monospace;
 }
 
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   --color-brand-primary: var(--color-brand-primary);
   --color-brand-primary-light: var(--color-brand-primary-light);
   --color-brand-primary-dark: var(--color-brand-primary-dark);
-  
+
   --color-brand-secondary: var(--color-brand-secondary);
   --color-brand-secondary-light: var(--color-brand-secondary-light);
 
-  --font-sans: 'Courier New', monospace;
-  --font-mono: 'Courier New', monospace;
+  --font-sans: "Courier New", monospace;
+  --font-mono: "Courier New", monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Courier New', monospace;
-  antialiased;
+  font-family: "Courier New", monospace;
+  @apply antialiased;
 }
 
 /* Glass Morphism Utilities */

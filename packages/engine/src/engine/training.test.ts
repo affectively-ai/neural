@@ -78,8 +78,9 @@ describe("Training Loop", () => {
         
         // Should dispatch twice (Delta Calc + Weight Update)
         // We can check calls to createCommandEncoder -> beginComputePass
-        const encoder = mockDevice.createCommandEncoder.mock.results.at(-1)?.value;
-        const pass = encoder?.beginComputePass.mock.results.at(-1)?.value;
+        // const encoder = mockDevice.createCommandEncoder.mock.results.at(-1)?.value;
+        // Check for pass calls if needed, otherwise ignore for now
+        // const pass = encoder?.beginComputePass.mock.results.at(-1)?.value;
         // mock logic is a bit simple, let's just check overall calls
         expect(mockDevice.queue.submit).toHaveBeenCalled();
     });

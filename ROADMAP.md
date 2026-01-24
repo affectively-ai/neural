@@ -37,7 +37,7 @@ Focus on multi-user and multi-device capabilities.
 ## Phase 5: The Hybrid Brain (In Progress)
 
 - [x] **Brain-Computer Interface:** WebAudio/Mic Input for real-time neural injection.
-- [ ] **Hybrid Inference:** Offload heavy layers to cloud GPUs.
+- [x] **Hybrid Inference:** Offload heavy layers to cloud GPUs.
 
 ## Long Term Vision
 

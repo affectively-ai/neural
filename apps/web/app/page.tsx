@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { AudioInput } from '../lib/audio';
 import dynamic from 'next/dynamic';
+import type { NeuralEngine } from '@buley/neural';
 
 const Visualizer = dynamic(() => import('../components/Visualizer'), { 
     ssr: false, 
@@ -15,9 +17,16 @@ export default function Home() {
   const [isReady, setIsReady] = useState(false);
   const [loss, setLoss] = useState<number | null>(null);
   const [isTraining, setIsTraining] = useState(false);
-  const [graphData, setGraphData] = useState<any>(null);
+  const [backend, setBackend] = useState<'gpu' | 'npu'>('gpu');
+  interface GraphData {
+      nodeCount: number;
+      edges: { id: string; source: number; target: number }[];
+      nodes: { id: string; type: string }[];
+  }
+
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
   
-  const engineRef = useRef<any>(null);
+  const engineRef = useRef<NeuralEngine | null>(null);
   const trainingRef = useRef(false);
 
   // Audio State
@@ -43,7 +52,7 @@ export default function Home() {
                 addLog("Microphone Connected. Listening...");
                 requestAnimationFrame(audioLoop);
               }
-          } catch (e) {
+          } catch (e: unknown) {
               addLog("Mic Error: Permission Denied?");
           }
       }
@@ -63,7 +72,7 @@ export default function Home() {
               const size = engineRef.current.gpu.networkSize * engineRef.current.gpu.batchSize;
               const fullInput = new Float32Array(size);
               fullInput.set(freq); 
-              engineRef.current.gpu.runTick(fullInput);
+              engineRef.current.runTick(fullInput);
           }
       }
       
@@ -81,15 +90,16 @@ export default function Home() {
       addLog("Model exported to JSON.");
   };
 
-  const handleImport = async (data: any) => {
+  const handleImport = async (data: unknown) => {
       if (!engineRef.current) return;
       try {
           addLog("Loading external model...");
-          const newData = await engineRef.current.importGraph(data);
+          const newData = await engineRef.current.importGraph(data as any);
           setGraphData(newData);
           addLog("Model imported successfully.");
-      } catch (e: any) {
-          addLog(`Import Error: ${e.message}`);
+      } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          addLog(`Import Error: ${msg}`);
       }
   };
 
@@ -97,7 +107,8 @@ export default function Home() {
 
 
   useEffect(() => {
-    import('@neural/engine').then(async (mod) => {
+    import('@buley/neural').then(async (mod) => {
+      // Import type via module augmentation or verify if export exists
       addLog("Initializing Neural 2.0 Engine...");
       try {
         const engine = new mod.NeuralEngine();
@@ -106,7 +117,7 @@ export default function Home() {
         setGraphData(engine.getGraphData());
         
         // Subscribe to events
-        engine.gpu.subscribe((e: any) => {
+        engine.gpu.subscribe((e: { type: string; value: number }) => {
             if (e.type === 'loss') setLoss(e.value);
             if (e.type === 'epoch' && Math.random() > 0.9) { 
                // Throttle
@@ -114,9 +125,14 @@ export default function Home() {
         });
 
         addLog("Engine Ready. WebGPU Compute + Storage Online.");
+        if (engine.activeBackend === 'npu') {
+             addLog("⚡️ NPU Acceleration Enabled");
+        }
+        setBackend(engine.activeBackend);
         setIsReady(true);
-      } catch (e: any) {
-        addLog(`Error: ${e.message}`);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        addLog(`Error: ${msg}`);
       }
     });
   }, []);
@@ -189,7 +205,7 @@ export default function Home() {
 
 
 
-  // ... (Render)
+
 
         <header className="flex justify-between items-center mb-12">
           {/* ... Title ... */}
@@ -205,6 +221,16 @@ export default function Home() {
                 )}
              </button>
              <div className="h-6 w-px bg-white/20 mx-2"></div>
+             
+             {/* Backend Indicator */}
+             <div className={`px-3 py-1 rounded text-xs font-mono font-bold border tracking-wider ${
+                 backend === 'npu' 
+                 ? 'border-cyan-400 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.3)]' 
+                 : 'border-white/20 text-white/50'
+             }`}>
+                {backend === 'npu' ? 'NPU ACTIVE' : 'GPU ACTIVE'}
+             </div>
+
              <ControlPanel onExport={handleExport} onImport={handleImport} />
              {/* ... */}
              <div className="h-6 w-px bg-white/20 mx-2"></div>
@@ -234,7 +260,7 @@ export default function Home() {
             <div className="glass-panel rounded-xl p-0 min-h-[500px] flex flex-col justify-center items-center relative overflow-hidden group">
                <Visualizer 
                    data={graphData} 
-                   onEdgeClick={async (index) => {
+                   onEdgeClick={async (index: number) => {
                        if (!engineRef.current || !graphData || !graphData.edges[index]) return;
                        const id = graphData.edges[index].id;
                        addLog(`Cutting synapse connection...`);

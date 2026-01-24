@@ -1,6 +1,6 @@
 {
-  "name": "@neural/engine",
-  "version": "2.0.0",
+  "name": "@buley/neural",
+  "version": "3.0.0",
   "description": "A Transparent, Local-First, WebGPU-Accelerated Neural Graph Database.",
   "type": "module",
   "main": "./src/index.ts",
@@ -10,10 +10,11 @@
     "bench": "bun src/bench/benchmark.ts"
   },
   "dependencies": {
-    "@buley/dash": "latest"
+    "@buley/dash": "2.1.4"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69",
+    "bun-types": "^1.3.6",
     "typescript": "^5.3.3",
     "vite": "^5.0.0"
   }

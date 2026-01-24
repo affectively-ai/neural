@@ -1,4 +1,4 @@
-import { expect, test, describe, mock, beforeAll } from "bun:test";
+import { expect, test, describe, mock } from "bun:test";
 import { GPUEngine } from "./gpu";
 
 // Mock WebGPU Globals
@@ -37,8 +37,8 @@ const mockAdapter = {
 // @ts-ignore
 global.navigator = {
     gpu: {
-        requestAdapter: mock(async () => mockAdapter)
-    }
+        requestAdapter: mock(async () => mockAdapter as unknown as GPUAdapter)
+    } as unknown as GPU
 };
 
 // Polyfill Globals

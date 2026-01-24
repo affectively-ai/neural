@@ -9,6 +9,7 @@
 ### The Learning Brain (Compute)
 
 - **WebGPU Backpropagation**: Custom WGSL kernels for massively parallel forward/backward passes.
+- **WebNN (NPU) Inference**: Direct access to Neural Processing Units for battery-efficient, native-speed execution.
 - **Real-Time Training**: Interactive stochastic gradient descent (SGD) engine running at 60fps.
 - **Batch Processing**: Supports mini-batch training with 3D compute dispatch.
 
@@ -81,7 +82,7 @@ bun run bench
 
 - **Runtime**: Bun
 - **Frontend**: Next.js, TailwindCSS, React Three Fiber
-- **Compute**: WebGPU (WGSL)
+- **Compute**: WebGPU (WGSL) + WebNN (NPU)
 - **Storage**: @buley/dash (WASM SQLite)
 
 ## License

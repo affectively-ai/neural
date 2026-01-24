@@ -1,8 +1,15 @@
 
 import { useState } from 'react';
+import type { Neuron, Synapse } from '@buley/neural';
+
+interface NeuralGraphData {
+    version: string;
+    neurons: Neuron[];
+    synapses: Synapse[];
+}
 
 // Preset Architectures
-const PRESETS = [
+const PRESETS: { name: string; desc: string; data: NeuralGraphData }[] = [
     {
         name: "XOR Logic Gate",
         desc: "Classic non-linear problem. 2 Inputs, 1 Hidden Layer (2 units), 1 Output.",
@@ -44,7 +51,7 @@ const PRESETS = [
     }
 ];
 
-export function ModelZoo({ onLoad }: { onLoad: (data: any) => void }) {
+export function ModelZoo({ onLoad }: { onLoad: (data: NeuralGraphData) => void }) {
     return (
         <div className="glass-panel p-6 rounded-xl border-brand-primary/20 bg-brand-primary/5">
             <h3 className="text-lg font-semibold text-brand-primary mb-4">Model Zoo</h3>
@@ -67,7 +74,7 @@ export function ModelZoo({ onLoad }: { onLoad: (data: any) => void }) {
     );
 }
 
-export function ControlPanel({ onExport, onImport }: { onExport: () => void, onImport: () => void }) {
+export function ControlPanel({ onExport, onImport }: { onExport: () => void, onImport: (data: NeuralGraphData) => void }) {
     return (
         <div className="flex gap-2">
             <button 
@@ -86,8 +93,8 @@ export function ControlPanel({ onExport, onImport }: { onExport: () => void, onI
                     const reader = new FileReader();
                     reader.onload = (ev) => {
                          try {
-                             const data = JSON.parse(ev.target?.result as string);
-                             onImport(data); // WRONG TYPE - onImport takes no args in prop def, fixing inline
+                             const data = JSON.parse(ev.target?.result as string) as NeuralGraphData;
+                             onImport(data);
                          } catch(err) {
                              alert("Invalid JSON");
                          }

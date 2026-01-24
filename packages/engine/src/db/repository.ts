@@ -20,6 +20,10 @@ export class NeuronRepository {
     async getAll(): Promise<Neuron[]> {
         return await dash.execute("SELECT * FROM neurons") as Neuron[];
     }
+
+    async delete(id: string): Promise<void> {
+        await dash.execute("DELETE FROM neurons WHERE id = ?", [id]);
+    }
 }
 
 export class SynapseRepository {
@@ -32,5 +36,9 @@ export class SynapseRepository {
 
     async getAll(): Promise<Synapse[]> {
         return await dash.execute("SELECT * FROM synapses") as Synapse[];
+    }
+
+    async delete(id: string): Promise<void> {
+        await dash.execute("DELETE FROM synapses WHERE id = ?", [id]);
     }
 }

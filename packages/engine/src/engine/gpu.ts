@@ -112,7 +112,7 @@ export class GPUEngine {
         }
 
         // Upload Input
-        this.device.queue.writeBuffer(this.inputBuffer, 0, inputs);
+        this.device.queue.writeBuffer(this.inputBuffer, 0, inputs as BufferSource);
 
         // Encode Command
         const commandEncoder = this.device.createCommandEncoder();
@@ -213,7 +213,7 @@ export class GPUEngine {
         // Let's assume prepareTrainingBuffers was called ONCE before loop.
         // We just need to update TARGETS buffer!
         if (this.targetBuffer) {
-           this.device?.queue.writeBuffer(this.targetBuffer, 0, targets);
+             this.device?.queue.writeBuffer(this.targetBuffer, 0, targets as BufferSource);
         }
         
         // Run Training Shaders
@@ -229,7 +229,7 @@ export class GPUEngine {
         }
 
         if (deltas && deltas.length > 0) {
-           this.device.queue.writeBuffer(this.deltaBuffer, 0, deltas);
+           this.device.queue.writeBuffer(this.deltaBuffer, 0, deltas as BufferSource);
         }
 
         const commandEncoder = this.device.createCommandEncoder();
@@ -251,7 +251,6 @@ export class GPUEngine {
         updatePass.end();
 
         this.device.queue.submit([commandEncoder.finish()]);
-        this.device.queue.submit([commandEncoder.finish()]);
     }
 
     async injectInput(data: Float32Array): Promise<void> {
@@ -259,7 +258,7 @@ export class GPUEngine {
         
         // We only write what we are given, usually just the first N inputs (Microphone bins)
         // If data is smaller than buffer, we use queue.writeBuffer which handles partial writes
-        this.device.queue.writeBuffer(this.inputBuffer, 0, data);
+        this.device.queue.writeBuffer(this.inputBuffer, 0, data as BufferSource);
         
         // Trigger a tick? Or let the outer loop do it?
         // Let's just update the buffer. The UI loop calls runTick() or similar.

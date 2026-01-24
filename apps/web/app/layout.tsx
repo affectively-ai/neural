@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "Neural 2.0 | The Learning Brain",
   description: "WebGPU-Accelerated Neural Graph Database",
 };

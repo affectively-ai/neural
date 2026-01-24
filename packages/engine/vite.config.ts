@@ -10,4 +10,13 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@buley/dash', '@sqlite.org/sqlite-wasm'],
   },
+  build: {
+    lib: {
+      entry: './src/index.ts',
+      formats: ['es'],
+    },
+    rollupOptions: {
+      external: ['@buley/dash', '@webgpu/types'],
+    }
+  }
 });

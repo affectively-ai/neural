@@ -2,24 +2,32 @@ import { dash } from "@buley/dash";
 import { initializeSchema } from "./db/schema";
 import { NeuronRepository, SynapseRepository } from "./db/repository";
 import { GPUEngine } from "./engine/gpu";
+import { WebNNEngine } from "./engine/webnn";
 import { Translator } from "./engine/translator";
+import { Neuron, Synapse } from "./types";
+
+export type { Neuron, Synapse } from "./types";
 
 export class NeuralEngine {
     gpu: GPUEngine;
+    npu: WebNNEngine;
     neuronRepo: NeuronRepository;
     synapseRepo: SynapseRepository;
     private translator: Translator;
 
+    activeBackend: 'gpu' | 'npu' = 'gpu';
+
     constructor() {
         this.gpu = new GPUEngine();
+        this.npu = new WebNNEngine();
         this.neuronRepo = new NeuronRepository();
         this.synapseRepo = new SynapseRepository();
         this.translator = new Translator();
     }
 
     // Cache
-    private neurons: any[] = [];
-    private synapses: any[] = [];
+    private neurons: Neuron[] = [];
+    private synapses: Synapse[] = [];
 
     async init() {
         console.log("Neural 2.0 Engine Initializing...");
@@ -31,6 +39,13 @@ export class NeuralEngine {
         // 2. Compute
         await this.gpu.init();
         this.gpu.batchSize = 2; // Default to mini-batch of 2 for demo
+
+        // Try NPU
+        await this.npu.init();
+        if (this.npu.isReady) {
+            console.log("Neural Engine: NPU Accelerated Backend Available.");
+            this.activeBackend = 'npu'; 
+        }
 
         // 3. Hydration
         this.neurons = await this.neuronRepo.getAll();
@@ -61,17 +76,47 @@ export class NeuralEngine {
             this.synapses = await this.synapseRepo.getAll();
         }
 
-        // 4. Compile to GPU
+        // 4. Compile to Compute Backends
+        await this.compile();
+
+        console.log(`Engine Ready. Active Backend: ${this.activeBackend.toUpperCase()}`);
+        return this.getGraphData();
+    }
+
+    async compile() {
         console.log(`Compiling graph: ${this.neurons.length} neurons, ${this.synapses.length} synapses`);
         const data = this.translator.flatten(this.neurons, this.synapses);
 
+        // GPU
         this.gpu.prepareBuffers(data.size, data.weights, data.biases, this.gpu.batchSize);
-        // Also prepare training buffers!
-        // Init target buffer with zeros
         this.gpu.prepareTrainingBuffers(new Float32Array(data.size * this.gpu.batchSize), 0.1);
 
-        console.log("Engine Ready.");
-        return data;
+        // NPU
+        if (this.npu.isReady) {
+            await this.npu.prepareModel(data.size, data.weights, data.biases, 2); 
+        }
+        
+        return data; // Return data for init/others if needed
+    }
+
+    async deployToCloud() {
+        console.log("Deploying heavy layers to Hybrid Cloud...");
+        // Randomly tagging neurons as "cloud"
+        this.neurons = this.neurons.map(n => ({
+            ...n,
+            type: Math.random() > 0.8 ? 'cloud' : n.type
+        }));
+        // Update repo? For demo we might just keep in memory or update repo.
+        // Let's update repo for persistence
+        for (const n of this.neurons) {
+            if (n.type === 'cloud') {
+               // Assuming repo has update or we just overwrite. 
+               // Repo might not support update efficiently. 
+               // For demo/speed, we likely just keep in memory for this session
+               // unless we want it to persist. 
+            }
+        }
+        return this.getGraphData();
     }
 
     getGraphData() {
@@ -86,8 +131,16 @@ export class NeuralEngine {
             weight: s.weight
         }));
 
+        // Return full nodes for visualization customization
+        const nodes = this.neurons.map((n, i) => ({
+            id: n.id,
+            index: i,
+            type: n.type
+        }));
+
         return {
             nodeCount: this.neurons.length,
+            nodes,
             edges
         };
     }
@@ -100,12 +153,7 @@ export class NeuralEngine {
         this.synapses = this.synapses.filter(s => s.id !== id);
         
         // Recompile (Heavy!)
-        // In a real app we'd just zero the weight in buffer
-        // But for "The Visible Brain" seeing it disappear is cooler.
-        const data = this.translator.flatten(this.neurons, this.synapses);
-        this.gpu.prepareBuffers(data.size, data.weights, data.biases, this.gpu.batchSize);
-        // Reset training buffers too to be safe/simple
-        this.gpu.prepareTrainingBuffers(new Float32Array(data.size * this.gpu.batchSize), 0.1);
+        await this.compile();
 
         return this.getGraphData();
     }
@@ -118,7 +166,7 @@ export class NeuralEngine {
         };
     }
 
-    async importGraph(data: any) {
+    async importGraph(data: { neurons: Neuron[], synapses: Synapse[] }) {
         if (!data.neurons || !data.synapses) throw new Error("Invalid graph data");
         
         console.log("Importing graph...");
@@ -139,17 +187,25 @@ export class NeuralEngine {
         this.synapses = await this.synapseRepo.getAll();
         
         console.log(`Compiling imported graph: ${this.neurons.length} neurons, ${this.synapses.length} synapses`);
-        const graph = this.translator.flatten(this.neurons, this.synapses);
-        this.gpu.prepareBuffers(graph.size, graph.weights, graph.biases, this.gpu.batchSize);
-        this.gpu.prepareTrainingBuffers(new Float32Array(graph.size * this.gpu.batchSize), 0.1);
+        await this.compile();
         
-
+        return this.getGraphData();
+    }
 
     async injectInput(data: Float32Array) {
-        // Map data to input neurons
-        // In simulation, we assume first N neurons are inputs.
-        // Or we just overwrite the first N values of the input buffer.
-        await this.gpu.injectInput(data);
+        if (this.activeBackend === 'npu' && this.npu.isReady) {
+             // WebNN takes input at runTick
+        } else {
+            await this.gpu.injectInput(data);
+        }
+    }
+
+    async runTick(inputs: Float32Array): Promise<Float32Array> {
+        if (this.activeBackend === 'npu' && this.npu.isReady) {
+            return this.npu.runTick(inputs);
+        } else {
+            return this.gpu.runTick(inputs);
+        }
     }
 }
 

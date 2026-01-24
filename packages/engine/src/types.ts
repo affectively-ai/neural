@@ -1,6 +1,6 @@
 export interface Neuron {
     id: string;
-    type: 'input' | 'hidden' | 'output';
+    type: 'input' | 'hidden' | 'output' | 'cloud';
     bias: number;
     activation: string;
 }

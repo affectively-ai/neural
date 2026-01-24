@@ -81,19 +81,19 @@ if (!global.navigator?.gpu) {
     console.log("No WebGPU detected in global scope. Mocking for CLI structure verification...");
     // @ts-ignore
     global.navigator = { 
-        gpu: { 
-            requestAdapter: async () => ({ 
-                requestDevice: async () => ({
-                    createShaderModule: () => ({}),
-                    createComputePipeline: () => ({ getBindGroupLayout: () => ({}) }),
-                    createBuffer: (d: any) => ({ getMappedRange: () => new ArrayBuffer(d.size), unmap: () => {}, mapAsync: async () => {} }),
-                    createBindGroup: () => ({}),
+        gpu: { ...({} as any) as GPU, 
+            requestAdapter: async () => ({ ...({} as any) as GPUAdapter, // Force cast for mock 
+                requestDevice: async () => ({ ...({} as any) as GPUDevice,
+                    createShaderModule: () => ({} as unknown as GPUShaderModule),
+                    createComputePipeline: () => ({ getBindGroupLayout: () => ({} as unknown as GPUBindGroupLayout) } as unknown as GPUComputePipeline),
+                    createBuffer: (d: any) => ({ getMappedRange: () => new ArrayBuffer(d.size), unmap: () => {}, mapAsync: async () => {} } as unknown as GPUBuffer),
+                    createBindGroup: () => ({} as unknown as GPUBindGroup),
                     createCommandEncoder: () => ({ 
-                        beginComputePass: () => ({ setPipeline:()=>{}, setBindGroup:()=>{}, dispatchWorkgroups:()=>{}, end:()=>{} }),
+                        beginComputePass: () => ({ setPipeline:()=>{}, setBindGroup:()=>{}, dispatchWorkgroups:()=>{}, end:()=>{} } as unknown as GPUComputePassEncoder),
                         copyBufferToBuffer: ()=>{},
-                        finish: ()=>({})
-                    }),
-                    queue: { writeBuffer: ()=>{}, submit: ()=>{} }
+                        finish: ()=>(({} as any) as GPUCommandBuffer)
+                    } as unknown as GPUCommandEncoder),
+                    queue: { writeBuffer: ()=>{}, submit: ()=>{} } as unknown as GPUQueue
                 }) 
             }) 
         } 

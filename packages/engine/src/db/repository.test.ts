@@ -1,9 +1,9 @@
-import { expect, test, describe, mock, beforeAll } from "bun:test";
+import { expect, test, describe, mock } from "bun:test";
 import { NeuronRepository, SynapseRepository } from "./repository";
 
 // Mock @buley/dash
 const mockDash = {
-    execute: mock((query, params) => {
+    execute: mock((query, _params) => {
         // Simple mock implementation
         if (query.includes("INSERT")) return Promise.resolve();
         if (query.includes("SELECT * FROM neurons")) return Promise.resolve([
