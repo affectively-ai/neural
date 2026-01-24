@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [4.1.0] - 2026-01-23
+
+### Changed
+
+- Bumped to 4.1.0 to align with Dash/Relay updates.
+
 ## [4.0.1] - 2026-01-23
 
 ### Changed
