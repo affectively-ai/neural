@@ -8,7 +8,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@buley/dash', '@sqlite.org/sqlite-wasm'],
+    exclude: ['@affectively/dash', '@sqlite.org/sqlite-wasm'],
   },
   build: {
     lib: {
@@ -16,7 +16,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['@buley/dash', '@webgpu/types'],
-    }
-  }
+      external: ['@affectively/dash', '@webgpu/types'],
+    },
+  },
 });

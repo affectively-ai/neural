@@ -1,8 +1,8 @@
-import "./globals.css";
+import './globals.css';
 
 export const metadata = {
-  title: "Neural 2.0 | The Learning Brain",
-  description: "WebGPU-Accelerated Neural Graph Database",
+  title: 'Neural 2.0 | The Learning Brain',
+  description: 'WebGPU-Accelerated Neural Graph Database',
 };
 
 export default function RootLayout({
@@ -12,9 +12,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased min-h-screen">
-        {children}
-      </body>
+      <body className="antialiased min-h-screen">{children}</body>
     </html>
   );
 }

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   --background: #000000;
@@ -15,7 +15,7 @@
   --color-brand-secondary: #fb7185;
   --color-brand-secondary-light: #fda4af;
 
-  --font-mono: "Courier New", monospace;
+  --font-mono: 'Courier New', monospace;
 }
 
 @theme {
@@ -29,14 +29,14 @@
   --color-brand-secondary: var(--color-brand-secondary);
   --color-brand-secondary-light: var(--color-brand-secondary-light);
 
-  --font-sans: "Courier New", monospace;
-  --font-mono: "Courier New", monospace;
+  --font-sans: 'Courier New', monospace;
+  --font-mono: 'Courier New', monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Courier New", monospace;
+  font-family: 'Courier New', monospace;
   @apply antialiased;
 }
 

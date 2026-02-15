@@ -1,44 +1,47 @@
-import { dash } from "@buley/dash";
-import { Neuron, Synapse } from "../types";
+import { dash } from '@affectively/dash';
+import { Neuron, Synapse } from '../types';
 
 export class NeuronRepository {
-    async create(neuron: Neuron): Promise<void> {
-        await dash.execute(
-            "INSERT INTO neurons (id, type, bias, activation) VALUES (?, ?, ?, ?)", 
-            [neuron.id, neuron.type, neuron.bias, neuron.activation]
-        );
-    }
-    
-    // Feature: Add with semantic embedding
-    async createWithSemantics(neuron: Neuron, description: string): Promise<void> {
-        // We store the structured data normally
-        await this.create(neuron);
-        // And we map the ID to a semantic embedding in dash's hidden semantic store
-        await dash.addWithEmbedding(neuron.id, description);
-    }
+  async create(neuron: Neuron): Promise<void> {
+    await dash.execute(
+      'INSERT INTO neurons (id, type, bias, activation) VALUES (?, ?, ?, ?)',
+      [neuron.id, neuron.type, neuron.bias, neuron.activation]
+    );
+  }
 
-    async getAll(): Promise<Neuron[]> {
-        return await dash.execute("SELECT * FROM neurons") as Neuron[];
-    }
+  // Feature: Add with semantic embedding
+  async createWithSemantics(
+    neuron: Neuron,
+    description: string
+  ): Promise<void> {
+    // We store the structured data normally
+    await this.create(neuron);
+    // And we map the ID to a semantic embedding in dash's hidden semantic store
+    await dash.addWithEmbedding(neuron.id, description);
+  }
 
-    async delete(id: string): Promise<void> {
-        await dash.execute("DELETE FROM neurons WHERE id = ?", [id]);
-    }
+  async getAll(): Promise<Neuron[]> {
+    return (await dash.execute('SELECT * FROM neurons')) as Neuron[];
+  }
+
+  async delete(id: string): Promise<void> {
+    await dash.execute('DELETE FROM neurons WHERE id = ?', [id]);
+  }
 }
 
 export class SynapseRepository {
-    async create(synapse: Synapse): Promise<void> {
-        await dash.execute(
-            "INSERT INTO synapses (id, from_id, to_id, weight) VALUES (?, ?, ?, ?)",
-            [synapse.id, synapse.from_id, synapse.to_id, synapse.weight]
-        );
-    }
+  async create(synapse: Synapse): Promise<void> {
+    await dash.execute(
+      'INSERT INTO synapses (id, from_id, to_id, weight) VALUES (?, ?, ?, ?)',
+      [synapse.id, synapse.from_id, synapse.to_id, synapse.weight]
+    );
+  }
 
-    async getAll(): Promise<Synapse[]> {
-        return await dash.execute("SELECT * FROM synapses") as Synapse[];
-    }
+  async getAll(): Promise<Synapse[]> {
+    return (await dash.execute('SELECT * FROM synapses')) as Synapse[];
+  }
 
-    async delete(id: string): Promise<void> {
-        await dash.execute("DELETE FROM synapses WHERE id = ?", [id]);
-    }
+  async delete(id: string): Promise<void> {
+    await dash.execute('DELETE FROM synapses WHERE id = ?', [id]);
+  }
 }
