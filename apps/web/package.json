@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@affectively/dash": "4.1.0",
+    "@affectively/dash": "workspace:*",
     "@buley/neural": "workspace:*",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",

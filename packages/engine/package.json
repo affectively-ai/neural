@@ -10,7 +10,7 @@
     "bench": "bun src/bench/benchmark.ts"
   },
   "dependencies": {
-    "@affectively/dash": "4.1.0"
+    "@affectively/dash": "workspace:*"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69",
