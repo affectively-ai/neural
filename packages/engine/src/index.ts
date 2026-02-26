@@ -8,6 +8,14 @@ import { Neuron, Synapse } from './types';
 
 export type { Neuron, Synapse } from './types';
 
+export interface AdapterTrainingConfig {
+  rank: number;
+  basePrecision: 'int8' | 'fp16' | 'fp32';
+  adapterPrecision: 'fp16' | 'fp32';
+  microBatchSize: number;
+  idleFlushMs: number;
+}
+
 export class NeuralEngine {
   gpu: GPUEngine;
   npu: WebNNEngine;
@@ -16,6 +24,13 @@ export class NeuralEngine {
   private translator: Translator;
 
   activeBackend: 'gpu' | 'npu' = 'gpu';
+  adapterTrainingConfig: AdapterTrainingConfig = {
+    rank: 8,
+    basePrecision: 'int8',
+    adapterPrecision: 'fp16',
+    microBatchSize: 16,
+    idleFlushMs: 45_000,
+  };
 
   constructor() {
     this.gpu = new GPUEngine();
@@ -157,6 +172,18 @@ export class NeuralEngine {
     return this.getGraphData();
   }
 
+  setAdapterTrainingConfig(config: Partial<AdapterTrainingConfig>) {
+    this.adapterTrainingConfig = {
+      ...this.adapterTrainingConfig,
+      ...config,
+    };
+    this.gpu.batchSize = this.adapterTrainingConfig.microBatchSize;
+  }
+
+  getAdapterTrainingConfig(): AdapterTrainingConfig {
+    return { ...this.adapterTrainingConfig };
+  }
+
   getGraphData() {
     // Map ID -> Index
     const map = new Map<string, number>();
@@ -246,6 +273,18 @@ export class NeuralEngine {
     } else {
       return this.gpu.runTick(inputs);
     }
+  }
+
+  async trainAdapterMicroBatch(
+    inputs: Float32Array,
+    targets: Float32Array
+  ): Promise<Float32Array> {
+    if (this.activeBackend === 'npu' && this.npu.isReady) {
+      throw new Error(
+        'Adapter micro-batch training is currently GPU-only in this runtime'
+      );
+    }
+    return this.gpu.train(inputs, targets);
   }
 }
 

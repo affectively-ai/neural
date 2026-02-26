@@ -17,7 +17,9 @@ export class NeuronRepository {
     // We store the structured data normally
     await this.create(neuron);
     // And we map the ID to a semantic embedding in dash's hidden semantic store
-    await dash.addWithEmbedding(neuron.id, description);
+    if (typeof dash.addWithEmbedding === 'function') {
+      await dash.addWithEmbedding(neuron.id, description);
+    }
   }
 
   async getAll(): Promise<Neuron[]> {
