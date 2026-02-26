@@ -1,6 +1,6 @@
 {
   "name": "@buley/neural",
-  "version": "4.1.0",
+  "version": "4.2.0",
   "description": "A Transparent, Local-First, WebGPU-Accelerated Neural Graph Database.",
   "type": "module",
   "main": "./src/index.ts",
